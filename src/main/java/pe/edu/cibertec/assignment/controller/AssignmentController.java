@@ -15,7 +15,7 @@ import pe.edu.cibertec.assignment.service.AssignmentService;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/assignments")
+@RequestMapping({"/api/assignments", "/api/v1/assignments"})
 @RequiredArgsConstructor
 public class AssignmentController {
 
@@ -76,7 +76,7 @@ public class AssignmentController {
         assignmentService.deleteAssignment(id);
     }
 
-    @PutMapping("/{id}/return")
+    @RequestMapping(value = "/{id}/return", method = {RequestMethod.POST, RequestMethod.PUT})
     public ApiResponseDto<AssignmentResponseDto> returnAssignment(
             @PathVariable Long id) {
 

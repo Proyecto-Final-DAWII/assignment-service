@@ -9,9 +9,7 @@ import org.springframework.context.annotation.Import;
 
 import static org.mockito.Mockito.mock;
 
-@SpringBootTest(properties = {
-        "spring.autoconfigure.exclude=org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration,org.springframework.boot.hibernate.autoconfigure.HibernateJpaAutoConfiguration"
-})
+@SpringBootTest
 @Import(AssignmentServiceApplicationTests.TestConfig.class)
 class AssignmentServiceApplicationTests {
 

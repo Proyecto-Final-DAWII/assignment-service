@@ -12,6 +12,8 @@ import org.springframework.beans.factory.annotation.Value;
 import feign.FeignException;
 import pe.edu.cibertec.assignment.client.InventoryClient;
 import pe.edu.cibertec.assignment.client.dto.InventoryResponseDto;
+import pe.edu.cibertec.assignment.client.dto.InventoryStatusRequestDto;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -27,6 +29,7 @@ public class AssignmentService {
     @Value("${app.inventory.validation.enabled:false}")
     private boolean inventoryValidationEnabled;
 
+    @Transactional
     public Assignment createAssignment(Assignment assignment) {
 
         boolean yaAsignado = assignmentRepository
@@ -46,6 +49,9 @@ public class AssignmentService {
         assignment.setAssignmentDate(java.time.LocalDate.now());
 
         Assignment saved = assignmentRepository.save(assignment);
+        if (inventoryValidationEnabled) {
+            updateInventoryStatus(saved.getAssetId(), "ASIGNADO");
+        }
 
         AuditEvent event = AuditEvent.builder()
                 .assetId(saved.getAssetId())
@@ -79,6 +85,7 @@ public class AssignmentService {
         assignmentRepository.delete(assignment);
     }
 
+    @Transactional
     public Assignment returnAssignment(Long id) {
         Assignment assignment = assignmentRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(
@@ -96,6 +103,9 @@ public class AssignmentService {
         assignment.setStatus("DEVUELTO");
 
         Assignment saved = assignmentRepository.save(assignment);
+        if (inventoryValidationEnabled) {
+            updateInventoryStatus(saved.getAssetId(), "DISPONIBLE");
+        }
 
         AuditEvent event = AuditEvent.builder()
                 .assetId(saved.getAssetId())
@@ -140,6 +150,17 @@ public class AssignmentService {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT,
                     "El activo no está disponible para asignación"
+            );
+        }
+    }
+
+    private void updateInventoryStatus(String assetId, String status) {
+        try {
+            inventoryClient.updateStatus(assetId, new InventoryStatusRequestDto(status));
+        } catch (FeignException ex) {
+            throw new ResponseStatusException(
+                    HttpStatus.SERVICE_UNAVAILABLE,
+                    "No se pudo actualizar el estado en inventory-service"
             );
         }
     }
